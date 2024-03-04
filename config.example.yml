@@ -1,0 +1,5 @@
+name: Maven Repository
+listen: 0.0.0.0:8080
+repository:
+  - release
+  - snapshot
