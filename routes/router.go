@@ -2,13 +2,17 @@ package routes
 
 import (
 	_ "embed"
+	"encoding/json"
 	"github.com/1f349/gomvn/database"
 	"github.com/1f349/gomvn/paths"
 	"github.com/julienschmidt/httprouter"
+	"github.com/thanhpk/randstr"
 	"html/template"
 	"io"
 	"net/http"
 	"os"
+	"path"
+	"path/filepath"
 )
 
 type routeCtx struct {
@@ -23,11 +27,62 @@ func Router(db *database.Queries, name, basePath string, repository []string) ht
 	pUtils := paths.Paths{Repository: repository}
 	base := routeCtx{db, pUtils, name, basePath, repository}
 
-	r := httprouter.New()
-	r.PUT("/*", base.handlePut)
-	r.GET("/", base.handleIndex)
-	r.GET("/*", base.handleGet)
-	return r
+	rApi := httprouter.New()
+	rApi.GET("/users", func(rw http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		users, err := db.GetAllUsers(req.Context())
+		if err != nil {
+			http.Error(rw, "500 Database Error", http.StatusInternalServerError)
+			return
+		}
+		_ = json.NewEncoder(rw).Encode(users)
+	})
+	rApi.POST("/users", func(rw http.ResponseWriter, req *http.Request, params httprouter.Params) {
+		err := req.ParseForm()
+		if err != nil {
+			http.Error(rw, "400 Bad Request", http.StatusBadRequest)
+			return
+		}
+		name := req.PostForm.Get("name")
+		admin := req.PostForm.Has("admin")
+		hex := randstr.Hex(32)
+
+		_, err = db.CreateUser(req.Context(), database.CreateUserParams{
+			Name:      name,
+			Admin:     admin,
+			TokenHash: hex,
+		})
+		if err != nil {
+			http.Error(rw, "500 Database Error", http.StatusInternalServerError)
+			return
+		}
+		_ = json.NewEncoder(rw).Encode(map[string]any{
+			"token": hex,
+		})
+	})
+
+	rWeb := httprouter.New()
+	rWeb.PUT("/*filepath", base.repoAuth(base.handlePut))
+	rWeb.GET("/", base.handleIndex)
+	for _, repo := range repository {
+		rWeb.ServeFiles(path.Join("/", repo, "*filepath"), http.FS(os.DirFS(filepath.Join(basePath, repo))))
+	}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api", func(rw http.ResponseWriter, req *http.Request) {
+		isAdmin, err := db.IsAdmin(req.Context(), req.Header.Get("Authorization"))
+		if err != nil {
+			http.Error(rw, "500 Database Error", http.StatusInternalServerError)
+			return
+		}
+		if isAdmin != 1 {
+			http.Error(rw, "403 Forbidden", http.StatusForbidden)
+			return
+		}
+		rApi.ServeHTTP(rw, req)
+	})
+	mux.Handle("/", rWeb)
+
+	return mux
 }
 
 //go:embed index.go.html

@@ -52,12 +52,16 @@ func main() {
 	db, err := gomvn.InitDB(filepath.Join(wd, "gomvn.sqlite3.db"))
 	if err != nil {
 		log.Fatal("[GoMVN] Error: invalid database: ", err)
-		return
+	}
+	repoBasePath := filepath.Join(wd, "repositories")
+	err = os.MkdirAll(repoBasePath, os.ModePerm)
+	if err != nil {
+		log.Fatal("[GoMVN] Error: failed to create repositories directory: ", err)
 	}
 
 	srv := &http.Server{
 		Addr:              config.Listen,
-		Handler:           routes.Router(db, config.Name, config.Repository),
+		Handler:           routes.Router(db, config.Name, repoBasePath, config.Repository),
 		ReadTimeout:       time.Minute,
 		ReadHeaderTimeout: time.Minute,
 		WriteTimeout:      time.Minute,

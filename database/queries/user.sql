@@ -8,10 +8,27 @@ FROM users
 WHERE admin = 1
   AND token_hash = ?;
 
+-- name: IsValid :one
+SELECT 1
+FROM users
+WHERE token_hash = ?;
+
 -- name: GetAllUsers :many
-SELECT id, name, admin, created_at, updated_at
+SELECT id, name
 FROM users;
 
 -- name: CreateUser :execlastid
-INSERT INTO users (name, admin, token_hash, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?);
+INSERT INTO users (name, admin, token_hash)
+VALUES (?, ?, ?);
+
+-- name: RefreshUserToken :exec
+UPDATE users
+SET token_hash =?
+WHERE id = ?
+  AND token_hash = ?;
+
+-- name: CheckUserDetails :one
+SELECT 1
+FROM users
+WHERE name = ?
+  AND token_hash = ?;

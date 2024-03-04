@@ -7,8 +7,26 @@ package database
 
 import (
 	"context"
-	"database/sql"
 )
+
+const checkUserDetails = `-- name: CheckUserDetails :one
+SELECT 1
+FROM users
+WHERE name = ?
+  AND token_hash = ?
+`
+
+type CheckUserDetailsParams struct {
+	Name      string `json:"name"`
+	TokenHash string `json:"token_hash"`
+}
+
+func (q *Queries) CheckUserDetails(ctx context.Context, arg CheckUserDetailsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkUserDetails, arg.Name, arg.TokenHash)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
 
 const countUsers = `-- name: CountUsers :one
 SELECT count(*)
@@ -23,26 +41,18 @@ func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
 }
 
 const createUser = `-- name: CreateUser :execlastid
-INSERT INTO users (name, admin, token_hash, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?)
+INSERT INTO users (name, admin, token_hash)
+VALUES (?, ?, ?)
 `
 
 type CreateUserParams struct {
-	Name      string        `json:"name"`
-	Admin     sql.NullInt64 `json:"admin"`
-	TokenHash string        `json:"token_hash"`
-	CreatedAt sql.NullTime  `json:"created_at"`
-	UpdatedAt sql.NullTime  `json:"updated_at"`
+	Name      string `json:"name"`
+	Admin     bool   `json:"admin"`
+	TokenHash string `json:"token_hash"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, createUser,
-		arg.Name,
-		arg.Admin,
-		arg.TokenHash,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-	)
+	result, err := q.db.ExecContext(ctx, createUser, arg.Name, arg.Admin, arg.TokenHash)
 	if err != nil {
 		return 0, err
 	}
@@ -50,16 +60,13 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (int64, 
 }
 
 const getAllUsers = `-- name: GetAllUsers :many
-SELECT id, name, admin, created_at, updated_at
+SELECT id, name
 FROM users
 `
 
 type GetAllUsersRow struct {
-	ID        int64         `json:"id"`
-	Name      string        `json:"name"`
-	Admin     sql.NullInt64 `json:"admin"`
-	CreatedAt sql.NullTime  `json:"created_at"`
-	UpdatedAt sql.NullTime  `json:"updated_at"`
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 func (q *Queries) GetAllUsers(ctx context.Context) ([]GetAllUsersRow, error) {
@@ -71,13 +78,7 @@ func (q *Queries) GetAllUsers(ctx context.Context) ([]GetAllUsersRow, error) {
 	var items []GetAllUsersRow
 	for rows.Next() {
 		var i GetAllUsersRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Admin,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -103,4 +104,35 @@ func (q *Queries) IsAdmin(ctx context.Context, tokenHash string) (int64, error) 
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
+}
+
+const isValid = `-- name: IsValid :one
+SELECT 1
+FROM users
+WHERE token_hash = ?
+`
+
+func (q *Queries) IsValid(ctx context.Context, tokenHash string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, isValid, tokenHash)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const refreshUserToken = `-- name: RefreshUserToken :exec
+UPDATE users
+SET token_hash =?
+WHERE id = ?
+  AND token_hash = ?
+`
+
+type RefreshUserTokenParams struct {
+	TokenHash   string `json:"token_hash"`
+	ID          int64  `json:"id"`
+	TokenHash_2 string `json:"token_hash_2"`
+}
+
+func (q *Queries) RefreshUserToken(ctx context.Context, arg RefreshUserTokenParams) error {
+	_, err := q.db.ExecContext(ctx, refreshUserToken, arg.TokenHash, arg.ID, arg.TokenHash_2)
+	return err
 }
