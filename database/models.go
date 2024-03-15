@@ -4,7 +4,25 @@
 
 package database
 
-import ()
+import (
+	"database/sql"
+	"time"
+)
+
+type Artifact struct {
+	MvnGroup string    `json:"mvn_group"`
+	Artifact string    `json:"artifact"`
+	Version  string    `json:"version"`
+	Modified time.Time `json:"modified"`
+}
+
+type Path struct {
+	UserID    sql.NullInt64 `json:"user_id"`
+	Path      string        `json:"path"`
+	Deploy    sql.NullInt64 `json:"deploy"`
+	CreatedAt sql.NullTime  `json:"created_at"`
+	UpdatedAt sql.NullTime  `json:"updated_at"`
+}
 
 type User struct {
 	ID        int64  `json:"id"`

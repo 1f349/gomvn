@@ -114,7 +114,3 @@ func (r *routeCtx) handlePut(rw http.ResponseWriter, req *http.Request, params h
 		return
 	}
 }
-
-func (r *routeCtx) handleGet(rw http.ResponseWriter, req *http.Request, params httprouter.Params) {
-
-}

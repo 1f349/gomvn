@@ -61,7 +61,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              config.Listen,
-		Handler:           routes.Router(db, config.Name, repoBasePath, config.Repository),
+		Handler:           routes.Router(db, config.Name, repoDir, config.Repository),
 		ReadTimeout:       time.Minute,
 		ReadHeaderTimeout: time.Minute,
 		WriteTimeout:      time.Minute,
