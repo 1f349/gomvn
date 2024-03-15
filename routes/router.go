@@ -103,6 +103,7 @@ func (r *routeCtx) handlePut(rw http.ResponseWriter, req *http.Request, params h
 		http.Error(rw, "404 Not Found", http.StatusNotFound)
 		return
 	}
+	p = filepath.Join(r.basePath, p)
 	err = os.MkdirAll(filepath.Dir(p), os.ModePerm)
 	if err != nil {
 		http.Error(rw, "500 Failed to create directory", http.StatusInternalServerError)
