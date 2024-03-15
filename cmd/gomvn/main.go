@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"github.com/1f349/gomvn"
+	"github.com/1f349/gomvn/database"
 	"github.com/1f349/gomvn/routes"
 	exitReload "github.com/MrMelon54/exit-reload"
 	"gopkg.in/yaml.v3"
@@ -53,6 +55,8 @@ func main() {
 	if err != nil {
 		log.Fatal("[GoMVN] Error: invalid database: ", err)
 	}
+	mustHaveUser(db)
+
 	repoBasePath := filepath.Join(wd, "repositories")
 	err = os.MkdirAll(repoBasePath, os.ModePerm)
 	if err != nil {
@@ -61,7 +65,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:              config.Listen,
-		Handler:           routes.Router(db, config.Name, repoDir, config.Repository),
+		Handler:           routes.Router(db, config.Name, repoBasePath, config.Repository),
 		ReadTimeout:       time.Minute,
 		ReadHeaderTimeout: time.Minute,
 		WriteTimeout:      time.Minute,
@@ -81,4 +85,21 @@ func main() {
 			log.Println(err)
 		}
 	})
+}
+
+func mustHaveUser(db *database.Queries) error {
+	// user must exist
+	users, err := db.CountUsers(context.Background())
+	if err != nil {
+		return err
+	}
+	if users == 0 {
+		_, err := db.CreateUser(context.Background(), database.CreateUserParams{
+			Name:      "admin",
+			Admin:     true,
+			TokenHash: "1234",
+		})
+		return err
+	}
+	return nil
 }
