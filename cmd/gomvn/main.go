@@ -55,7 +55,10 @@ func main() {
 	if err != nil {
 		log.Fatal("[GoMVN] Error: invalid database: ", err)
 	}
-	mustHaveUser(db)
+	err = mustHaveUser(db)
+	if err != nil {
+		log.Fatal("[GoMVN] Error: failed to ensure at least one user exists: ", err)
+	}
 
 	repoBasePath := filepath.Join(wd, "repositories")
 	err = os.MkdirAll(repoBasePath, os.ModePerm)

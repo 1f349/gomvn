@@ -9,6 +9,7 @@ import (
 	"github.com/thanhpk/randstr"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -90,11 +91,19 @@ var indexHtml string
 
 var indexTemplate = template.Must(template.New("index").Parse(indexHtml))
 
-func (r *routeCtx) handleIndex(rw http.ResponseWriter, req *http.Request, params httprouter.Params) {
-	_ = indexTemplate.Execute(rw, map[string]any{
+func (r *routeCtx) handleIndex(rw http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+	repositories, err := paths.GetRepositories(r.basePath, r.repository)
+	if err != nil {
+		http.Error(rw, "500 Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	err = indexTemplate.Execute(rw, map[string]any{
 		"Name":         r.name,
-		"Repositories": paths.GetRepositories(r.basePath, r.repository),
+		"Repositories": repositories,
 	})
+	if err != nil {
+		log.Println("[GoMVN] Index template error: ", err)
+	}
 }
 
 func (r *routeCtx) handlePut(rw http.ResponseWriter, req *http.Request, params httprouter.Params) {
