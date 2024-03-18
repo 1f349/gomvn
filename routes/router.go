@@ -7,13 +7,8 @@ import (
 	"github.com/1f349/gomvn/paths"
 	"github.com/julienschmidt/httprouter"
 	"github.com/thanhpk/randstr"
-	"html/template"
-	"io"
-	"log"
 	"net/http"
-	"os"
 	"path"
-	"path/filepath"
 )
 
 type routeCtx struct {
@@ -63,9 +58,9 @@ func Router(db *database.Queries, name, basePath string, repository []string) ht
 
 	rWeb := httprouter.New()
 	rWeb.PUT("/*filepath", base.repoAuth(base.handlePut))
-	rWeb.GET("/", base.handleIndex)
+	rWeb.GET("/", base.handleFiles)
 	for _, repo := range repository {
-		rWeb.ServeFiles(path.Join("/", repo, "*filepath"), http.FS(os.DirFS(filepath.Join(basePath, repo))))
+		rWeb.GET(path.Join("/", repo, "*filepath"), base.handleFiles)
 	}
 
 	mux := http.NewServeMux()
@@ -84,48 +79,4 @@ func Router(db *database.Queries, name, basePath string, repository []string) ht
 	mux.Handle("/", rWeb)
 
 	return mux
-}
-
-//go:embed index.go.html
-var indexHtml string
-
-var indexTemplate = template.Must(template.New("index").Parse(indexHtml))
-
-func (r *routeCtx) handleIndex(rw http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-	repositories, err := paths.GetRepositories(r.basePath, r.repository)
-	if err != nil {
-		http.Error(rw, "500 Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	err = indexTemplate.Execute(rw, map[string]any{
-		"Name":         r.name,
-		"Repositories": repositories,
-	})
-	if err != nil {
-		log.Println("[GoMVN] Index template error: ", err)
-	}
-}
-
-func (r *routeCtx) handlePut(rw http.ResponseWriter, req *http.Request, params httprouter.Params) {
-	p, err := r.pathUtils.ParsePath(req)
-	if err != nil {
-		http.Error(rw, "404 Not Found", http.StatusNotFound)
-		return
-	}
-	p = filepath.Join(r.basePath, p)
-	err = os.MkdirAll(filepath.Dir(p), os.ModePerm)
-	if err != nil {
-		http.Error(rw, "500 Failed to create directory", http.StatusInternalServerError)
-		return
-	}
-	create, err := os.Create(p)
-	if err != nil {
-		http.Error(rw, "500 Failed to open file", http.StatusInternalServerError)
-		return
-	}
-	_, err = io.Copy(create, req.Body)
-	if err != nil {
-		http.Error(rw, "500 Failed to write file", http.StatusInternalServerError)
-		return
-	}
 }

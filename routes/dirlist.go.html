@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ .Name }} - {{ .Path }}</title>
+    <style>
+        html, body {
+            font-size: 13px;
+            font-family: monospace;
+        }
+
+        table tr.header {
+            border-bottom-color: #3a3e41;
+        }
+
+        table tr td {
+            padding-inline: 10px;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<h1>{{.Name}}</h1>
+<table>
+    <tr class="header">
+        <th>Name</th>
+        <th>Last Modified</th>
+        <th>Size</th>
+    </tr>
+    {{range .Files}}
+        <tr>
+            <td class="bold"><a href="{{ .URL }}">{{ .Name }}</a></td>
+            <td>{{ .ModTime }}</td>
+            <td>{{ .Size }}</td>
+        </tr>
+    {{end}}
+</table>
+</body>
+</html>
