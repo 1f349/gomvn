@@ -59,8 +59,10 @@ func Router(db *database.Queries, name, basePath string, repository []string) ht
 	rWeb := httprouter.New()
 	rWeb.PUT("/*filepath", base.repoAuth(base.handlePut))
 	rWeb.GET("/", base.handleFiles)
+	rWeb.HEAD("/", base.handleFiles)
 	for _, repo := range repository {
 		rWeb.GET(path.Join("/", repo, "*filepath"), base.handleFiles)
+		rWeb.HEAD(path.Join("/", repo, "*filepath"), base.handleFiles)
 	}
 
 	mux := http.NewServeMux()

@@ -49,6 +49,9 @@ type fileInfo struct {
 }
 
 func (r *routeCtx) handleDirList(rw http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodHead {
+		return
+	}
 	openDir, err := os.ReadDir(filepath.Join(r.basePath, req.URL.Path))
 	if err != nil {
 		http.Error(rw, "404 Not Found", http.StatusNotFound)
