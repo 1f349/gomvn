@@ -14,8 +14,7 @@
 {{range $k, $v := .Repositories}}
     <ul>
         {{range $v}}
-            <li><a href="{{ $k }}/{{ .GetPath }}" class="dir">{{ .MvnGroup }}:{{ .Artifact }}:{{ .Version }}</a>, last
-                modified {{ .Modified }}</li>
+            <li><a href="{{ $k }}/{{ .GetPath }}" class="dir">{{ .MvnGroup }}:{{ .Artifact }}:{{ .Version }}</a>, last modified {{ .Modified }}</li>
         {{end}}
     </ul>
 {{end}}
