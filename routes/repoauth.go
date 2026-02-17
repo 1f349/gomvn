@@ -39,9 +39,9 @@ func parseBasicBearer(req *http.Request) (string, string, bool) {
 		return "", "", false
 	}
 	decStr := string(decBytes)
-	n := strings.IndexByte(decStr, ':')
-	if n == -1 {
+	before, after, ok0 := strings.Cut(decStr, ":")
+	if !ok0 {
 		return "", "", false
 	}
-	return decStr[:n], decStr[n+1:], true
+	return before, after, true
 }
