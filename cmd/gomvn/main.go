@@ -7,7 +7,7 @@ import (
 	"github.com/1f349/gomvn"
 	"github.com/1f349/gomvn/database"
 	"github.com/1f349/gomvn/routes"
-	exitReload "github.com/MrMelon54/exit-reload"
+	exitReload "github.com/mrmelon54/exit-reload"
 	"gopkg.in/yaml.v3"
 	"log"
 	"net/http"
