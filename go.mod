@@ -1,6 +1,6 @@
 module github.com/1f349/gomvn
 
-go 1.22
+go 1.26
 
 require (
 	github.com/MrMelon54/exit-reload v0.0.1
